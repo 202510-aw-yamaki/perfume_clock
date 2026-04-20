@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfume Digital Clock</title>
+  <style>
+    :root {
+      --theme-primary: #223056;
+      --theme-secondary: #425c90;
+      --theme-accent: #f1c58f;
+      --page-bg: #ffe0c7;
+      --page-bg-deep: #f6c7a3;
+      --text-main: #2b211c;
+      --text-sub: rgba(43, 33, 28, 0.72);
+      --border: rgba(255, 255, 255, 0.28);
+      --shadow: 0 24px 60px rgba(118, 77, 46, 0.16);
+      --liquid-height: 0%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background:
+        radial-gradient(circle at 14% 16%, rgba(255,255,255,0.72), transparent 20%),
+        radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--theme-accent) 18%, white), transparent 26%),
+        radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--theme-secondary) 12%, transparent), transparent 34%),
+        linear-gradient(145deg, var(--page-bg), var(--page-bg-deep));
+      transition: background 900ms ease, color 500ms ease;
+    }
+
+    .screen {
+      position: relative;
+      width: min(900px, 96vw);
+      min-height: 400px;
+      overflow: hidden;
+      isolation: isolate;
+      border-radius: 34px;
+      border: 1px solid var(--border);
+      background:
+        radial-gradient(circle at 14% 18%, rgba(255,255,255,0.22), transparent 24%),
+        radial-gradient(circle at 86% 82%, color-mix(in srgb, var(--theme-accent) 14%, white), transparent 22%),
+        linear-gradient(160deg,
+          color-mix(in srgb, var(--theme-secondary) 42%, rgba(255,255,255,0.14)),
+          color-mix(in srgb, var(--theme-primary) 82%, black 8%) 54%,
+          color-mix(in srgb, var(--theme-secondary) 74%, black 10%));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 26%, rgba(255,255,255,0.04)),
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.10), transparent 22%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .screen::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: 26px;
+      border: 1px solid rgba(255,255,255,0.06);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient,
+    .ambient::before,
+    .ambient::after {
+      position: absolute;
+      content: "";
+      border-radius: 999px;
+      pointer-events: none;
+      filter: blur(12px);
+    }
+
+    .ambient {
+      right: -44px;
+      top: -70px;
+      width: 240px;
+      height: 240px;
+      background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+      opacity: 0.9;
+      animation: floatGlow 11s ease-in-out infinite;
+    }
+
+    .ambient::before {
+      left: -520px;
+      top: 180px;
+      width: 220px;
+      height: 220px;
+      background: color-mix(in srgb, var(--theme-secondary) 18%, white 18%);
+      opacity: 0.7;
+      animation: floatGlow 13s ease-in-out infinite reverse;
+    }
+
+    .ambient::after {
+      left: -120px;
+      top: 260px;
+      width: 160px;
+      height: 160px;
+      background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+      opacity: 0.65;
+      animation: floatGlow 12s ease-in-out infinite;
+    }
+
+    .content {
+      position: relative;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      min-height: 400px;
+    }
+
+    .panel {
+      position: relative;
+      padding: 28px;
+    }
+
+    .info-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.10), transparent 72%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--theme-accent));
+    }
+
+    .time-wrap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .time {
+      font-size: clamp(2.7rem, 7.8vw, 5.8rem);
+      line-height: 0.94;
+      letter-spacing: 0.06em;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      word-break: keep-all;
+    }
+
+    .date-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+    }
+
+    .date,
+    .weekday {
+      font-size: clamp(1rem, 2vw, 1.12rem);
+      font-weight: 700;
+      color: var(--text-sub);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .weekday::before {
+      content: "•";
+      margin-right: 12px;
+      opacity: 0.65;
+    }
+
+    .details {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(255,255,255,0.48);
+      background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.42));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.42),
+        0 14px 28px rgba(79, 48, 30, 0.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: auto -18px -24px auto;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+      filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .floral-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.84), rgba(255,255,255,0.48));
+      border-color: rgba(255,255,255,0.58);
+    }
+
+    .label {
+      position: relative;
+      z-index: 1;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+
+    .floral-head {
+      position: relative;
+      z-index: 3;
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .flower-name {
+      font-size: clamp(1.18rem, 2vw, 1.4rem);
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .meaning-line,
+    .theme-line {
+      font-size: 0.96rem;
+      line-height: 1.7;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .meaning-line strong,
+    .theme-line strong {
+      color: var(--text-main);
+      font-weight: 800;
+    }
+
+    .scent-block {
+      position: relative;
+      z-index: 1;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.22);
+      display: grid;
+      gap: 8px;
+    }
+
+    .scent-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      font-weight: 800;
+    }
+
+    .scent-text {
+      margin: 0;
+      font-size: 0.96rem;
+      line-height: 1.8;
+      color: color-mix(in srgb, var(--text-main) 82%, transparent);
+    }
+
+    .visual-panel {
+      display: grid;
+      place-items: center;
+    }
+
+    .perfume-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 380px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .mist-layer,
+    .inner-mist,
+    .petal-burst-layer,
+    .screen-petal-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .screen-petal-layer {
+      z-index: 4;
+      mix-blend-mode: screen;
+    }
+
+    .mist,
+    .bubble,
+    .petal {
+      position: absolute;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--theme-accent) 26%, rgba(255,255,255,0.42));
+      opacity: 0.5;
+      filter: blur(1px);
+      animation: driftUp linear infinite;
+    }
+
+    .bubble {
+      background: color-mix(in srgb, rgba(255,255,255,0.76) 56%, var(--theme-accent));
+      opacity: 0.58;
+      animation: bubbleRise linear infinite;
+    }
+
+    .petal {
+      width: 12px;
+      height: 18px;
+      border-radius: 60% 60% 60% 60% / 72% 72% 38% 38%;
+      transform: rotate(14deg);
+      animation: petalFloat linear infinite;
+      opacity: 0.34;
+      filter: blur(0.45px);
+    }
+
+    .distillery {
+      position: relative;
+      width: min(308px, 100%);
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding-top: 18px;
+    }
+
+    .source-pod {
+      position: absolute;
+      top: 8px;
+      display: grid;
+      justify-items: center;
+    }
+
+    .source-orb {
+      position: relative;
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,0.96), rgba(255,255,255,0.3) 22%, color-mix(in srgb, var(--theme-accent) 52%, transparent) 62%, transparent 74%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--theme-accent) 28%, rgba(255,255,255,0.22)), transparent 72%);
+      box-shadow:
+        inset 0 0 24px rgba(255,255,255,0.22),
+        0 0 30px color-mix(in srgb, var(--theme-accent) 24%, transparent);
+    }
+
+    .source-orb::before,
+    .source-orb::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.24);
+      animation: pulseRing 4.4s ease-in-out infinite;
+    }
+
+    .source-orb::before {
+      inset: 10px;
+    }
+
+    .source-orb::after {
+      inset: -6px;
+      opacity: 0.5;
+      animation-delay: 1.2s;
+    }
+
+    .source-icon {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 0 14px rgba(255,255,255,0.26));
+    }
+
+    .source-icon svg {
+      width: 46px;
+      height: 46px;
+      overflow: visible;
+    }
+
+    .tube {
+      position: absolute;
+      top: 92px;
+      width: 10px;
+      height: 88px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255,255,255,0.2);
+      overflow: hidden;
+      box-shadow: inset 0 0 10px rgba(255,255,255,0.12);
+    }
+
+    .flow {
+      position: absolute;
+      inset: -40% 1px auto;
+      height: 46%;
+      border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,0), color-mix(in srgb, var(--theme-accent) 80%, white 20%), rgba(255,255,255,0));
+      filter: blur(0.5px);
+      animation: stream 2s linear infinite;
+    }
+
+    .flow:nth-child(2) {
+      animation-delay: 0.6s;
+      opacity: 0.66;
+    }
+
+    .flow:nth-child(3) {
+      animation-delay: 1.2s;
+      opacity: 0.46;
+    }
+
+    .drop {
+      position: absolute;
+      top: 168px;
+      width: 12px;
+      height: 18px;
+      border-radius: 50% 50% 55% 55% / 40% 40% 70% 70%;
+      transform: rotate(180deg);
+      background: radial-gradient(circle at 45% 34%, rgba(255,255,255,0.9), color-mix(in srgb, var(--theme-accent) 78%, transparent));
+      box-shadow: 0 0 18px color-mix(in srgb, var(--theme-accent) 36%, transparent);
+      animation: dropFall 2.8s ease-in infinite;
+    }
+
+    .drop.drop-2 {
+      animation-delay: 1.05s;
+      opacity: 0.75;
+      transform: translateX(-8px) rotate(180deg) scale(0.88);
+    }
+
+    .bottle-wrap {
+      position: absolute;
+      bottom: 2px;
+      width: 252px;
+      height: 282px;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 12px;
+    }
+
+    .progress-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.28);
+      border: 1px solid rgba(255,255,255,0.32);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--text-main);
+    }
+
+    .bottle {
+      position: relative;
+      width: 176px;
+      height: 228px;
+      margin-top: 1px;
+    }
+
+    .bottle-cap {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 58px;
+      height: 22px;
+      border-radius: 10px 10px 8px 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.14));
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    .bottle-neck {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 22px;
+      border-radius: 0 0 14px 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+      border-left: 1px solid rgba(255,255,255,0.18);
+      border-right: 1px solid rgba(255,255,255,0.18);
+      border-bottom: 1px solid rgba(255,255,255,0.18);
+      z-index: 2;
+    }
+
+    .bottle-body {
+      position: absolute;
+      left: 50%;
+      top: 34px;
+      transform: translateX(-50%);
+      width: 168px;
+      height: 188px;
+      border-radius: 26px 26px 30px 30px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.26), rgba(255,255,255,0.08)),
+        linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.24);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.04),
+        inset 18px 0 22px rgba(255,255,255,0.04),
+        inset -12px 0 16px rgba(255,255,255,0.03),
+        0 18px 30px rgba(0,0,0,0.14);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .bottle-body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 16px;
+      width: 18px;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.06));
+      opacity: 0.74;
+      filter: blur(1px);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .bottle-body::after {
+      content: "";
+      position: absolute;
+      inset: auto 16px 12px 16px;
+      height: 12px;
+      border-radius: 999px;
+      background: radial-gradient(circle, color-mix(in srgb, var(--theme-accent) 36%, rgba(255,255,255,0.18)), transparent 70%);
+      filter: blur(5px);
+      opacity: 0.92;
+      z-index: 1;
+    }
+
+    .liquid {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: var(--liquid-height);
+      min-height: 0;
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--theme-accent) 56%, rgba(255,255,255,0.7)) 0%,
+          color-mix(in srgb, var(--theme-accent) 72%, rgba(255,255,255,0.14)) 36%,
+          color-mix(in srgb, var(--theme-secondary) 76%, var(--theme-accent)) 100%);
+      transition: height 320ms ease-out, background 820ms ease;
+      box-shadow:
+        inset 0 8px 18px rgba(255,255,255,0.22),
+        inset 0 -16px 24px rgba(0,0,0,0.12),
+        0 0 30px color-mix(in srgb, var(--theme-accent) 24%, transparent);
+      overflow: hidden;
+    }
+
+    .liquid::before,
+    .liquid::after {
+      content: "";
+      position: absolute;
+      left: -8%;
+      width: 116%;
+      border-radius: 44%;
+      background: rgba(255,255,255,0.24);
+      opacity: 0.58;
+    }
+
+    .liquid::before {
+      top: -9px;
+      height: 20px;
+      animation: waveShift 6s linear infinite;
+    }
+
+    .liquid::after {
+      top: -14px;
+      height: 28px;
+      opacity: 0.24;
+      animation: waveShift 9s linear infinite reverse;
+    }
+
+    .liquid-glow {
+      position: absolute;
+      inset: auto -8% -26% -8%;
+      height: 60%;
+      background: radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--theme-accent) 28%, rgba(255,255,255,0.18)), transparent 64%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .bottle-note {
+      width: 100%;
+      text-align: center;
+      display: grid;
+      gap: 4px;
+      padding: 0 8px;
+    }
+
+    .bottle-note strong {
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .bottle-note span {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: var(--text-sub);
+    }
+
+    .burst-petal {
+      position: absolute;
+      left: 50%;
+      top: 72%;
+      width: var(--size, 14px);
+      height: calc(var(--size, 14px) * 1.45);
+      margin-left: calc(var(--size, 14px) / -2);
+      border-radius: 60% 60% 60% 60% / 70% 70% 38% 38%;
+      background:
+        radial-gradient(circle at 36% 30%, rgba(255,255,255,0.9), transparent 28%),
+        var(--petal-color, rgba(255,255,255,0.8));
+      opacity: 0;
+      transform-origin: center center;
+      filter: drop-shadow(0 0 8px rgba(255,255,255,0.24));
+      animation: burstPetal var(--dur, 2.2s) cubic-bezier(.15,.65,.2,1) forwards;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screen-petal {
+      position: absolute;
+      right: -12%;
+      top: var(--top, 50%);
+      width: var(--size, 18px);
+      height: calc(var(--size, 18px) * 1.35);
+      border-radius: 60% 60% 60% 60% / 74% 74% 34% 34%;
+      background:
+        radial-gradient(circle at 34% 28%, rgba(255,255,255,0.92), transparent 26%),
+        var(--petal-color, rgba(255,255,255,0.8));
+      opacity: 0;
+      transform-origin: center center;
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.28));
+      animation: screenPetalSweep var(--dur, 4s) cubic-bezier(.2,.62,.15,1) forwards;
+      animation-delay: var(--delay, 0s);
+      z-index: 2;
+    }
+
+    @keyframes floatGlow {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-10px, 14px, 0) scale(1.08); }
+    }
+
+    @keyframes driftUp {
+      0% { transform: translate3d(0, 18px, 0) scale(0.7); opacity: 0; }
+      20% { opacity: 0.5; }
+      100% { transform: translate3d(18px, -220px, 0) scale(1.2); opacity: 0; }
+    }
+
+    @keyframes bubbleRise {
+      0% { transform: translate3d(0, 18px, 0) scale(0.85); opacity: 0; }
+      20% { opacity: 0.5; }
+      100% { transform: translate3d(10px, -130px, 0) scale(1.15); opacity: 0; }
+    }
+
+    @keyframes petalFloat {
+      0% { transform: translate3d(0, 20px, 0) rotate(8deg); opacity: 0; }
+      15% { opacity: 0.2; }
+      100% { transform: translate3d(32px, -250px, 0) rotate(150deg); opacity: 0; }
+    }
+
+    @keyframes pulseRing {
+      0%, 100% { transform: scale(1); opacity: 0.68; }
+      50% { transform: scale(1.08); opacity: 0.22; }
+    }
+
+    @keyframes stream {
+      0% { transform: translateY(-120%); }
+      100% { transform: translateY(260%); }
+    }
+
+    @keyframes dropFall {
+      0% { transform: translateY(-8px) scale(0.72) rotate(180deg); opacity: 0; }
+      18% { opacity: 0.95; }
+      74% { opacity: 0.95; }
+      100% { transform: translateY(36px) scale(1) rotate(180deg); opacity: 0; }
+    }
+
+    @keyframes waveShift {
+      0% { transform: translateX(-4%) rotate(0deg); }
+      50% { transform: translateX(4%) rotate(-1deg); }
+      100% { transform: translateX(-4%) rotate(0deg); }
+    }
+
+    @keyframes burstPetal {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0) rotate(0deg) scale(0.55);
+      }
+      12% {
+        opacity: 0.96;
+      }
+      78% {
+        opacity: 0.88;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate3d(var(--x, 0px), calc(var(--y, -180px) + var(--fall, 0px)), 0)
+          rotate(var(--rot, 180deg))
+          scale(1);
+      }
+    }
+
+    @keyframes screenPetalSweep {
+      0% {
+        opacity: 0;
+        transform: translate3d(12vw, 12px, 0) rotate(0deg) scale(0.8);
+      }
+      12% {
+        opacity: 0.94;
+      }
+      62% {
+        opacity: 0.82;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate3d(-118vw, var(--driftY, -24px), 0)
+          rotate(var(--rot, 300deg))
+          scale(1.08);
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 12px 12px calc(28px + env(safe-area-inset-bottom));
+      }
+
+      .screen {
+        width: min(100%, 720px);
+        min-height: calc(100dvh - 24px - env(safe-area-inset-bottom));
+        border-radius: 34px 34px 42px 42px;
+      }
+
+      .screen::after {
+        inset: 10px 10px 14px;
+        border-radius: 28px 28px 36px 36px;
+      }
+
+      .content {
+        position: relative;
+        grid-template-columns: 1fr;
+        min-height: inherit;
+      }
+
+      .panel {
+        padding: 24px 18px;
+      }
+
+      .info-panel {
+        position: relative;
+        z-index: 3;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        min-height: 100%;
+        padding-top: 32px;
+        padding-bottom: calc(132px + env(safe-area-inset-bottom));
+        text-align: center;
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 28%, rgba(255,255,255,0.05) 100%);
+      }
+
+      .info-panel > * {
+        width: min(100%, 520px);
+      }
+
+      .eyebrow {
+        justify-content: center;
+        align-self: center;
+      }
+
+      .eyebrow::before {
+        width: 28px;
+      }
+
+      .time-wrap {
+        justify-items: center;
+        text-align: center;
+      }
+
+      .date-row {
+        justify-content: center;
+      }
+
+      .details {
+        justify-items: center;
+      }
+
+      .details .card {
+        width: min(100%, 540px);
+      }
+
+      .visual-panel {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .perfume-stage {
+        min-height: 100%;
+        align-items: center;
+      }
+
+      .distillery {
+        width: 100%;
+        height: 100%;
+        padding-top: 0;
+      }
+
+      .source-pod {
+        top: 78px;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0.72;
+      }
+
+      .tube {
+        top: 154px;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 144px;
+      }
+
+      .drop {
+        top: 292px;
+        left: 50%;
+        transform: translateX(-50%) rotate(180deg);
+      }
+
+      .drop.drop-2 {
+        transform: translateX(-58%) rotate(180deg) scale(0.88);
+      }
+
+      .bottle-wrap {
+        top: 50%;
+        bottom: auto;
+        transform: translateY(-4%);
+        width: min(92vw, 380px);
+        height: 72%;
+        gap: 10px;
+      }
+
+      .progress-pill,
+      .bottle-note {
+        opacity: 0.92;
+      }
+
+      .bottle {
+        width: min(74vw, 278px);
+        height: min(76vh, 460px);
+      }
+
+      .bottle-cap {
+        width: 76px;
+        height: 28px;
+      }
+
+      .bottle-neck {
+        top: 24px;
+        width: 54px;
+        height: 28px;
+      }
+
+      .bottle-body {
+        top: 46px;
+        width: min(70vw, 252px);
+        height: min(62vh, 350px);
+        border-radius: 34px 34px 38px 38px;
+      }
+
+      .mist-layer {
+        opacity: 0.46;
+      }
+
+      .inner-mist {
+        opacity: 0.88;
+      }
+
+      .scent-text {
+        line-height: 1.72;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .time {
+        letter-spacing: 0.03em;
+      }
+
+      .eyebrow {
+        font-size: 0.74rem;
+        letter-spacing: 0.15em;
+      }
+
+      .date-row {
+        gap: 8px 10px;
+      }
+
+      .weekday::before {
+        margin-right: 10px;
+      }
+
+      .bottle-wrap {
+        width: min(94vw, 360px);
+        transform: translateY(-2%);
+      }
+
+      .source-orb {
+        width: 78px;
+        height: 78px;
+      }
+
+      .progress-pill {
+        font-size: 0.8rem;
+      }
+
+      .details .card {
+        padding: 17px 16px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <div class="ambient"></div>
+    <div class="screen-petal-layer" id="screenPetalLayer"></div>
+
+    <div class="content">
+      <section class="panel info-panel">
+        <div class="eyebrow">Perfume Digital Clock</div>
+
+        <div class="time-wrap">
+          <div class="time" id="time">00:00:00</div>
+          <div class="date-row">
+            <div class="date" id="date">0000/00/00</div>
+            <div class="weekday" id="weekday">月曜日</div>
+          </div>
+        </div>
+
+        <div class="details">
+          <article class="card floral-card">
+            <div class="label">Floral Note</div>
+
+            <div class="floral-head">
+              <div class="flower-name" id="flowerName">月下美人</div>
+              <div class="meaning-line"><strong>花言葉：</strong><span id="flowerMeaning">はかない美、強い意志</span></div>
+              <div class="theme-line"><strong>テーマ色：</strong><span id="colorName">深夜</span></div>
+            </div>
+
+            <div class="scent-block">
+              <div class="scent-label">Scent Profile</div>
+              <p class="scent-text" id="flowerScent">濃密で白く甘いフローラルに、夜気のような透明感が重なる神秘的な香り。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel visual-panel">
+        <div class="perfume-stage">
+          <div class="mist-layer" id="mistLayer"></div>
+          <div class="petal-burst-layer" id="petalBurstLayer"></div>
+
+          <div class="distillery">
+            <div class="source-pod">
+              <div class="source-orb">
+                <div class="source-icon" id="sourceIcon" aria-hidden="true"></div>
+              </div>
+            </div>
+
+            <div class="tube">
+              <span class="flow"></span>
+              <span class="flow"></span>
+              <span class="flow"></span>
+            </div>
+
+            <div class="drop"></div>
+            <div class="drop drop-2"></div>
+
+            <div class="bottle-wrap">
+              <div class="progress-pill" id="progressText">ボトル充填 0%</div>
+
+              <div class="bottle">
+                <div class="bottle-cap"></div>
+                <div class="bottle-neck"></div>
+                <div class="bottle-body">
+                  <div class="inner-mist" id="innerMist"></div>
+                  <div class="liquid" id="liquid">
+                    <div class="liquid-glow"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bottle-note">
+                <strong id="bottleTitle">深い青のミッドナイト・アコード</strong>
+                <span id="bottleSub">10分かけて1本のボトルが満ち、満了の瞬間に花がふわりと舞います。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const themes = [
+      {
+        themeName: '深夜',
+        themeNameEn: 'Midnight Blue',
+        colorImage: '静寂、神秘、深い青',
+        flower: '月下美人',
+        meaning: 'はかない美、強い意志',
+        scent: '夜に咲く白い大輪から漂う、ジャスミンに似た甘く濃厚で上品な香りです。夕方から咲き始め、深夜に最も強く香ります。',
+        title: '深い青のミッドナイト・アコード',
+        primary: '#07142a',
+        secondary: '#15325f',
+        accent: '#77b8ff',
+        icon: { petals: 10, petalColor: '#f7f6ff', centerColor: '#d7e3ff', innerColor: '#ffffff', petalLength: 13, petalWidth: 5.8, radius: 11.5, rotation: 0 }
+      },
+      {
+        themeName: '藍色',
+        themeNameEn: 'Indigo',
+        colorImage: '深い眠り、静寂',
+        flower: 'ナイトブルーのバラ',
+        meaning: '夢かなう、神の祝福',
+        scent: '「ミッドナイトブルー」という品種は、非常に濃厚な紫色の花を咲かせることで知られ、スパイスの効いた香りが大人っぽい雰囲気を持つバラです。',
+        title: '藍に沈むローズ・ドリーム',
+        primary: '#12143c',
+        secondary: '#2a2e74',
+        accent: '#98a4ff',
+        icon: { petals: 12, petalColor: '#6f76d9', centerColor: '#d7d9ff', innerColor: '#9ea7ff', petalLength: 10.8, petalWidth: 6.6, radius: 8.2, rotation: 12 }
+      },
+      {
+        themeName: '濃紺',
+        themeNameEn: 'Dark Navy',
+        colorImage: '夢、宇宙、休息',
+        flower: '星形の花（ブルースター）',
+        meaning: '信じあう心、幸福な愛',
+        scent: 'ほんのりと甘く、芳醇な香りを控えめに優しく漂う星のような形の花姿です。',
+        title: 'スターライト・レスト',
+        primary: '#0b1734',
+        secondary: '#1e335c',
+        accent: '#9ad4ff',
+        icon: { petals: 5, petalColor: '#8dcfff', centerColor: '#f2f7ff', innerColor: '#d9ebff', petalLength: 15, petalWidth: 7.5, radius: 10, rotation: 0 }
+      },
+      {
+        themeName: '墨色',
+        themeNameEn: 'Charcoal',
+        colorImage: '混沌、静寂の極み',
+        flower: 'スズラン',
+        meaning: '純粋、純愛',
+        scent: 'グリーン感のある爽やかで透明感のある「清楚」「可憐」なフローラルノートが特徴で、ほんのりとした甘さに青々しさが混ざる上品な香りです。',
+        title: 'チャコール・ミュゲ',
+        primary: '#17181d',
+        secondary: '#31333d',
+        accent: '#d0deff',
+        icon: { petals: 7, petalColor: '#f7fbff', centerColor: '#dfe8f5', innerColor: '#ffffff', petalLength: 9.5, petalWidth: 6.8, radius: 8.6, rotation: 20 }
+      },
+      {
+        themeName: '藍白',
+        themeNameEn: 'Indigo White',
+        colorImage: '夜明け前、静けさ',
+        flower: '白百合',
+        meaning: '純潔、無垢',
+        scent: '濃厚で甘く、華やかで上品なフローラルノートの香りが特徴です。この香りは多くの人にとって優雅でリラックス効果があるとされています。',
+        title: 'プレドーン・リリー',
+        primary: '#d9e6f5',
+        secondary: '#8aa7cb',
+        accent: '#ffffff',
+        icon: { petals: 6, petalColor: '#fffef7', centerColor: '#f7d875', innerColor: '#ffffff', petalLength: 16, petalWidth: 6.4, radius: 10.5, rotation: 0 }
+      },
+      {
+        themeName: '薄明色',
+        themeNameEn: 'Pale Dawn',
+        colorImage: '明け方、希望',
+        flower: 'カスミソウ',
+        meaning: '感謝、幸福',
+        scent: '清々しいグリーン系の香りと、ほのかな甘み、香ばしさを併せ持つ「森林の香り」が特徴です。爽やかな笹の香りは心をリラックスさせ、天然の防臭・殺菌効果も重宝されます。',
+        title: 'ドーン・ミスト',
+        primary: '#eed7e5',
+        secondary: '#d2aeca',
+        accent: '#fff8ff',
+        icon: { petals: 8, petalColor: '#fff6fb', centerColor: '#f5d9ec', innerColor: '#ffffff', petalLength: 8.4, petalWidth: 5.2, radius: 12.2, rotation: 8 }
+      },
+      {
+        themeName: '朝焼け',
+        themeNameEn: 'Sunrise Pink',
+        colorImage: '始まり、優しい光',
+        flower: '桃色のチューリップ',
+        meaning: '愛の芽生え、労い',
+        scent: '春の爽やかさを感じさせる優しく甘い香りや、少し蜂蜜のような甘い香り、あるいはさわやかな品種ごとに多様な香りを持つのが特徴です。',
+        title: 'サンライズ・チューリップ',
+        primary: '#ffb9c7',
+        secondary: '#ff8aa8',
+        accent: '#fff1f5',
+        icon: { petals: 6, petalColor: '#ffc7d8', centerColor: '#ffe8b0', innerColor: '#ffdbe6', petalLength: 14, petalWidth: 7.2, radius: 8.6, rotation: 30 }
+      },
+      {
+        themeName: '薄黄色',
+        themeNameEn: 'Pale Yellow',
+        colorImage: '目覚め、温かさ',
+        flower: '朝顔',
+        meaning: '愛情、結束、明日もさわやかに',
+        scent: '一部の品種には微かに香りがありますが、香りの強い花ではありません。そのため、朝顔の香りは主に、凛とした爽やかさをイメージして調合されます。',
+        title: 'モーニング・ブリーズ',
+        primary: '#f7eca8',
+        secondary: '#dbc85f',
+        accent: '#fff7d2',
+        icon: { petals: 5, petalColor: '#b7c6ff', centerColor: '#fff1a6', innerColor: '#e5ebff', petalLength: 15.5, petalWidth: 8, radius: 8.8, rotation: 0 }
+      },
+      {
+        themeName: '明るい黄色',
+        themeNameEn: 'Sunny Yellow',
+        colorImage: '活動、元気、希望',
+        flower: 'ヒマワリ',
+        meaning: '憧れ、情熱',
+        scent: 'ほのかでグリーン調の香りです。強い芳香はなく、太陽に温められた草や、かすかに干し草のような甘い香りが混ざった野原の香りと評されます。',
+        title: 'サニー・パッション',
+        primary: '#ffd85a',
+        secondary: '#ffbf2d',
+        accent: '#fff4a6',
+        icon: { petals: 16, petalColor: '#ffcf3d', centerColor: '#6c4918', innerColor: '#ffeb8e', petalLength: 12.8, petalWidth: 5.2, radius: 12.4, rotation: 0 }
+      },
+      {
+        themeName: '若葉色',
+        themeNameEn: 'Light Green',
+        colorImage: '新鮮、成長、仕事',
+        flower: 'スイートピー',
+        meaning: '優しい思い出、門出',
+        scent: '春の訪れを感じさせる爽やかで優しい甘い香りが特徴でフルーティーな香り成分を含み、リラックス効果や、部屋を明るくするような心地よい香りです。',
+        title: 'グリーン・メモワール',
+        primary: '#9fd38d',
+        secondary: '#5aa56d',
+        accent: '#ecffe4',
+        icon: { petals: 6, petalColor: '#ffd7ec', centerColor: '#f4ffca', innerColor: '#ffe9f5', petalLength: 13.4, petalWidth: 7.8, radius: 9, rotation: 18 }
+      },
+      {
+        themeName: '空色',
+        themeNameEn: 'Sky Blue',
+        colorImage: '清々しさ、集中',
+        flower: 'ネモフィラ',
+        meaning: 'どこでも成功、清々しい心',
+        scent: 'かすかで爽やかなグリーンで清潔感のある蜂蜜のような甘さがする花です。香りは非常に弱く、花畑一面に咲いていても鼻を近づけないと分からない程度です。',
+        title: 'クリア・スカイ・ノート',
+        primary: '#8ecbff',
+        secondary: '#4ea0e6',
+        accent: '#eefaff',
+        icon: { petals: 5, petalColor: '#7fb6ff', centerColor: '#ffffff', innerColor: '#ddecff', petalLength: 14.5, petalWidth: 7.2, radius: 9.3, rotation: 0 }
+      },
+      {
+        themeName: '白',
+        themeNameEn: 'Pure White',
+        colorImage: '明晰、正午への準備',
+        flower: 'マーガレット',
+        meaning: '真実の愛、私を忘れないで',
+        scent: '一般的なマーガレットは無香か、かすかに青臭い程度ですが、風恋香はラバンジュオールという成分を含み、ラベンダーに似た甘い香りを花弁から放ちます。',
+        title: 'ホワイト・クラリティ',
+        primary: '#f3f5f7',
+        secondary: '#cfd6de',
+        accent: '#ffffff',
+        icon: { petals: 12, petalColor: '#ffffff', centerColor: '#ffd95a', innerColor: '#fffdf1', petalLength: 13, petalWidth: 5.4, radius: 10.8, rotation: 8 }
+      },
+      {
+        themeName: '黄金色',
+        themeNameEn: 'Golden',
+        colorImage: '輝き、充実、昼食',
+        flower: 'キンモクセイ',
+        meaning: '陶酔、真実',
+        scent: '甘くフルーティーで濃厚な香りが特徴の秋の風物詩。桃やアプリコットのようなニュアンスがあり、リラックスや安眠、ダイエットへの効果も期待されます。',
+        title: 'ゴールデン・オスマンサス',
+        primary: '#f1b638',
+        secondary: '#d68611',
+        accent: '#ffe8ad',
+        icon: { petals: 4, petalColor: '#ffb63f', centerColor: '#fff2a0', innerColor: '#ffd57d', petalLength: 12.5, petalWidth: 8.2, radius: 8.2, rotation: 45 }
+      },
+      {
+        themeName: '陽光色',
+        themeNameEn: 'Bright Yellow',
+        colorImage: 'エネルギー、活動',
+        flower: 'ガーベラ',
+        meaning: '前向き、希望',
+        scent: 'ガーベラは基本的に香りがほとんどなく視覚的に楽しむ花であり、「ガーベラの香り」として販売されているものは、爽やかなフローラル系をイメージして作られています。',
+        title: 'ブライト・ガーベラ',
+        primary: '#ffd74a',
+        secondary: '#ffb400',
+        accent: '#fff3b4',
+        icon: { petals: 18, petalColor: '#ffb347', centerColor: '#816024', innerColor: '#ffe188', petalLength: 12.2, petalWidth: 4.8, radius: 12.8, rotation: 0 }
+      },
+      {
+        themeName: 'スカイブルー',
+        themeNameEn: 'Light Blue',
+        colorImage: '落ち着き、開放感',
+        flower: 'アジサイ',
+        meaning: '家族団らん、一途な愛情',
+        scent: '一般的に「雨の日の爽やかで落ち着いた香り」と表現され、多くの品種は香りがありませんが、一部の品種（コアジサイなど）は甘い香りを放ちます。',
+        title: 'ハイドレンジア・エア',
+        primary: '#9edcff',
+        secondary: '#5aaed9',
+        accent: '#eefbff',
+        icon: { petals: 8, petalColor: '#a8c9ff', centerColor: '#f7f7ff', innerColor: '#d9e8ff', petalLength: 9.5, petalWidth: 6.4, radius: 12.4, rotation: 20 }
+      },
+      {
+        themeName: '薄桃色',
+        themeNameEn: 'Soft Pink',
+        colorImage: '休息、ティータイム',
+        flower: 'コスモス',
+        meaning: '乙女の真心、愛情、調和',
+        scent: '香りはほぼないか、爽やかな草の香りがする程度です。一部の品種はバニリン成分により、文字通り甘いチョコレートの香りがします。',
+        title: 'ティータイム・コスモス',
+        primary: '#f8bfd0',
+        secondary: '#df8ca7',
+        accent: '#fff1f6',
+        icon: { petals: 8, petalColor: '#ffbfd9', centerColor: '#ffd875', innerColor: '#ffe1ee', petalLength: 14.2, petalWidth: 5.8, radius: 10.2, rotation: 0 }
+      },
+      {
+        themeName: 'オレンジ',
+        themeNameEn: 'Sunset Orange',
+        colorImage: '夕暮れ、温もり',
+        flower: 'マリーゴールド',
+        meaning: '可憐な愛情、生命の輝き',
+        scent: '甘くフローラルな印象を持つ品種もあれば、柑橘系のさわやかな香りがするものもあり「さわやか」や「温かみのあるアロマ」な香りです。',
+        title: 'サンセット・マリーゴールド',
+        primary: '#ffab57',
+        secondary: '#e56c2a',
+        accent: '#ffe6bc',
+        icon: { petals: 16, petalColor: '#ff9b38', centerColor: '#70421d', innerColor: '#ffc56d', petalLength: 11.8, petalWidth: 5.6, radius: 11.6, rotation: 12 }
+      },
+      {
+        themeName: '夕焼け色',
+        themeNameEn: 'Crimson',
+        colorImage: '黄昏、帰路',
+        flower: 'ポピー',
+        meaning: '思いやり、恋の予感',
+        scent: 'バナナや熟した果実、あるいはモクレンのような甘く濃厚で華やかな香りを放ちます。その香りは非常に強く、風に乗って木の下まで漂い、香水のような上品さを持ちます。',
+        title: 'クリムゾン・トワイライト',
+        primary: '#cf4c4f',
+        secondary: '#86253a',
+        accent: '#ffd0d2',
+        icon: { petals: 4, petalColor: '#ff7a74', centerColor: '#2d1d18', innerColor: '#ffb1ad', petalLength: 16, petalWidth: 10, radius: 7.6, rotation: 45 }
+      },
+      {
+        themeName: '紫色',
+        themeNameEn: 'Violet',
+        colorImage: '静寂、変化',
+        flower: 'ラベンダー',
+        meaning: 'あなたを待っています、優美',
+        scent: 'ハーブの爽やかさとフローラルな華やかさを兼ね備えた、優しく落ち着いた香りです。リラックス効果や安眠効果が非常に高く、緊張を和らげる「万能アロマ」です。',
+        title: 'ヴィオレット・ラベンダー',
+        primary: '#9a79da',
+        secondary: '#6348b4',
+        accent: '#efe1ff',
+        icon: { petals: 7, petalColor: '#b39be9', centerColor: '#f4ecff', innerColor: '#d7c7ff', petalLength: 10.2, petalWidth: 4.6, radius: 12.6, rotation: 12 }
+      },
+      {
+        themeName: '濃紫',
+        themeNameEn: 'Deep Violet',
+        colorImage: '夜の始まり、大人の時間',
+        flower: 'ダリア',
+        meaning: '優雅、気品',
+        scent: '優雅で華やか、かつ甘さを感じさせるフルーティーな香りが特徴的で、チョコレートの香りがする品種も存在します。',
+        title: 'ダリア・イヴニング',
+        primary: '#6f4cb5',
+        secondary: '#3a1f76',
+        accent: '#e3cfff',
+        icon: { petals: 18, petalColor: '#9c73e1', centerColor: '#f4e9ff', innerColor: '#c6a2ff', petalLength: 10.4, petalWidth: 5.1, radius: 10.4, rotation: 0 }
+      },
+      {
+        themeName: '藍色',
+        themeNameEn: 'Dark Indigo',
+        colorImage: 'リラックス、癒やし',
+        flower: 'クレマチス',
+        meaning: '心の美、旅人の喜び',
+        scent: '白花はあまり香らないものも多いですが、ピンク花はカカオまたはバニラ＋チョコレートのような香りがすばらしく、一度味わうとたちまち虜になる方も多いです。',
+        title: 'インディゴ・リリーフ',
+        primary: '#26346b',
+        secondary: '#14204a',
+        accent: '#b2c0ff',
+        icon: { petals: 8, petalColor: '#8ea0ff', centerColor: '#fff5c0', innerColor: '#c4d0ff', petalLength: 13.6, petalWidth: 6.4, radius: 10.2, rotation: 0 }
+      },
+      {
+        themeName: '青紫',
+        themeNameEn: 'Deep Purple',
+        colorImage: '一日の終わり、安らぎ',
+        flower: '夜咲くラン（バンダ）',
+        meaning: '愛のあふれる日、華やかな恋',
+        scent: '基本的に香りが弱い、または無臭の品種が多いですが、一部の原種や交配種はシトラスやバニラのような甘い香りを放ちます。',
+        title: 'ナイト・オーキッド',
+        primary: '#4b327f',
+        secondary: '#1e1b56',
+        accent: '#cdbdff',
+        icon: { petals: 5, petalColor: '#9571ee', centerColor: '#fff1b3', innerColor: '#ccb8ff', petalLength: 15.8, petalWidth: 8.2, radius: 8.8, rotation: 18 }
+      },
+      {
+        themeName: '紺色',
+        themeNameEn: 'Navy',
+        colorImage: '静かな時間、休息',
+        flower: '白のジャスミン',
+        meaning: '愛らしさ、あなたについていく',
+        scent: '「香りの王」と称されるほど、濃厚で甘美、かつ非常に華やかなで清潔感があり夕方から夜にかけて香りが強くなる傾向があります。',
+        title: 'ネイビー・ジャスミン',
+        primary: '#15244f',
+        secondary: '#0a1431',
+        accent: '#f4f6ff',
+        icon: { petals: 7, petalColor: '#fffef8', centerColor: '#ffeab0', innerColor: '#ffffff', petalLength: 13.2, petalWidth: 5.6, radius: 10.8, rotation: 0 }
+      },
+      {
+        themeName: '深夜の闇',
+        themeNameEn: 'Darkness',
+        colorImage: '終わり、深いリラックス',
+        flower: '月見草',
+        meaning: '無言の愛情、ほのかな恋',
+        scent: 'ほのかな甘さとフルーティーさが香りが特徴です。青い花びらが最も有名で、見た目にも美しく、優雅で華やかな印象を与えます。',
+        title: 'ダーク・ムーンフラワー',
+        primary: '#090b12',
+        secondary: '#1b2032',
+        accent: '#b8c7f7',
+        icon: { petals: 4, petalColor: '#fff6cf', centerColor: '#f2d97a', innerColor: '#fff8e0', petalLength: 15, petalWidth: 8.4, radius: 8.4, rotation: 45 }
+      }
+    ];
+
+    const timeEl = document.getElementById('time');
+    const dateEl = document.getElementById('date');
+    const weekdayEl = document.getElementById('weekday');
+    const flowerNameEl = document.getElementById('flowerName');
+    const flowerMeaningEl = document.getElementById('flowerMeaning');
+    const colorNameEl = document.getElementById('colorName');
+    const flowerScentEl = document.getElementById('flowerScent');
+    const sourceIconEl = document.getElementById('sourceIcon');
+    const progressTextEl = document.getElementById('progressText');
+    const bottleTitleEl = document.getElementById('bottleTitle');
+    const bottleSubEl = document.getElementById('bottleSub');
+    const innerMistEl = document.getElementById('innerMist');
+    const mistLayerEl = document.getElementById('mistLayer');
+    const petalBurstLayerEl = document.getElementById('petalBurstLayer');
+    const screenPetalLayerEl = document.getElementById('screenPetalLayer');
+
+    const weekdays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+    const tenMinuteMs = 10 * 60 * 1000;
+    const warmBase = '#ffe0c7';
+    const warmDeep = '#f4c4a0';
+
+    let lastHour = -1;
+    let lastSecond = -1;
+    let lastBottleCycle = -1;
+    let lastThemeIndex = new Date().getHours();
+
+    function pad(num) {
+      return String(num).padStart(2, '0');
+    }
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function clamp(num, min, max) {
+      return Math.min(max, Math.max(min, num));
+    }
+
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      const expanded = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
+      const bigint = parseInt(expanded, 16);
+      return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255
+      };
+    }
+
+    function rgbToHex({ r, g, b }) {
+      const toHex = (n) => Math.round(clamp(n, 0, 255)).toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    function mixHex(a, b, weight) {
+      const colorA = hexToRgb(a);
+      const colorB = hexToRgb(b);
+      const w = clamp(weight, 0, 1);
+      return rgbToHex({
+        r: colorA.r * (1 - w) + colorB.r * w,
+        g: colorA.g * (1 - w) + colorB.g * w,
+        b: colorA.b * (1 - w) + colorB.b * w
+      });
+    }
+
+    function getLuminance(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    }
+
+    function getNightStrength(hour) {
+      if (hour <= 3) return 0.86;
+      if (hour === 4) return 0.74;
+      if (hour === 5) return 0.56;
+      if (hour === 6) return 0.34;
+      if (hour <= 16) return 0.08;
+      if (hour === 17) return 0.18;
+      if (hour === 18) return 0.38;
+      if (hour === 19) return 0.54;
+      if (hour === 20) return 0.68;
+      if (hour === 21) return 0.76;
+      if (hour === 22) return 0.84;
+      return 0.9;
+    }
+
+    function applyTheme(theme, hour) {
+      const root = document.documentElement;
+      root.style.setProperty('--theme-primary', theme.primary);
+      root.style.setProperty('--theme-secondary', theme.secondary);
+      root.style.setProperty('--theme-accent', theme.accent);
+
+      const nightStrength = getNightStrength(hour);
+      const pageBg = mixHex(warmBase, theme.primary, nightStrength);
+      const pageDeep = mixHex(warmDeep, theme.secondary, clamp(nightStrength + 0.08, 0.12, 0.96));
+
+      root.style.setProperty('--page-bg', pageBg);
+      root.style.setProperty('--page-bg-deep', pageDeep);
+
+      const referenceColor = mixHex(pageBg, theme.primary, 0.3);
+      const luminance = getLuminance(referenceColor);
+      const mainText = luminance > 0.6 ? '#2b211c' : '#f9f6f0';
+      const subText = luminance > 0.6 ? 'rgba(43, 33, 28, 0.72)' : 'rgba(249, 246, 240, 0.76)';
+      const border = luminance > 0.6 ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.14)';
+      const shadow = luminance > 0.6 ? '0 24px 60px rgba(118, 77, 46, 0.16)' : '0 26px 70px rgba(0, 0, 0, 0.34)';
+
+      root.style.setProperty('--text-main', mainText);
+      root.style.setProperty('--text-sub', subText);
+      root.style.setProperty('--border', border);
+      root.style.setProperty('--shadow', shadow);
+
+      flowerNameEl.textContent = theme.flower;
+      flowerMeaningEl.textContent = theme.meaning;
+      colorNameEl.textContent = `${theme.themeName} (${theme.themeNameEn})`;
+      flowerScentEl.textContent = theme.scent;
+      bottleTitleEl.textContent = theme.title;
+      bottleSubEl.textContent = `10分かけて「${theme.flower}」の香りが満ち、満了の瞬間に花びらが画面をやわらかく横切ります。`;
+
+      renderSourceIcon(theme);
+      rebuildMist(mistLayerEl, 18, false, theme);
+      rebuildMist(innerMistEl, 12, true, theme);
+    }
+
+    function renderSourceIcon(theme) {
+      const icon = theme.icon;
+      const petals = [];
+      const count = icon.petals || 6;
+      const rotationOffset = icon.rotation || 0;
+      const radius = icon.radius || 10;
+      const petalLength = icon.petalLength || 13;
+      const petalWidth = icon.petalWidth || 6;
+
+      for (let i = 0; i < count; i++) {
+        const angle = (360 / count) * i + rotationOffset;
+        const extraScale = 0.92 + (i % 2) * 0.08;
+        petals.push(`
+          <ellipse
+            cx="23"
+            cy="${23 - radius}"
+            rx="${petalWidth * extraScale}"
+            ry="${petalLength * extraScale}"
+            fill="${icon.petalColor}"
+            transform="rotate(${angle} 23 23)"
+            opacity="${0.94 - (i % 3) * 0.08}"
+          />
+        `);
+      }
+
+      sourceIconEl.innerHTML = `
+        <svg viewBox="0 0 46 46" role="img" aria-label="${theme.flower}">
+          <defs>
+            <radialGradient id="flowerCore" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="${icon.innerColor || '#ffffff'}" />
+              <stop offset="100%" stop-color="${icon.centerColor || '#fff2c8'}" />
+            </radialGradient>
+          </defs>
+          ${petals.join('')}
+          <circle cx="23" cy="23" r="7.2" fill="url(#flowerCore)" />
+          <circle cx="23" cy="23" r="3.1" fill="${icon.centerColor || '#fff2c8'}" opacity="0.9" />
+        </svg>
+      `;
+    }
+
+    function rebuildMist(container, count, inner, theme) {
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const node = document.createElement('span');
+        const selector = inner ? (i % 4 === 0 ? 'petal' : 'bubble') : (i % 5 === 0 ? 'petal' : 'mist');
+        node.className = selector;
+        const size = inner
+          ? (selector === 'petal' ? rand(8, 14) : rand(4, 10))
+          : (selector === 'petal' ? rand(10, 16) : rand(10, 24));
+        const left = inner ? rand(8, 88) : rand(0, 100);
+        const bottom = inner ? rand(-4, 10) : rand(-10, 80);
+        const duration = inner ? rand(3.6, 7.4) : rand(6.6, 13.2);
+        const delay = rand(-duration, 0);
+
+        node.style.width = `${size}px`;
+        node.style.height = selector === 'petal' ? `${size * 1.4}px` : `${size}px`;
+        node.style.left = `${left}%`;
+        node.style.bottom = `${bottom}px`;
+        node.style.animationDuration = `${duration}s`;
+        node.style.animationDelay = `${delay}s`;
+        node.style.opacity = selector === 'petal' ? rand(0.14, 0.34) : rand(0.2, 0.58);
+
+        if (selector === 'petal') {
+          node.style.background = `
+            radial-gradient(circle at 35% 28%, rgba(255,255,255,0.92), transparent 26%),
+            ${theme.icon?.petalColor || theme.accent}
+          `;
+        }
+
+        container.appendChild(node);
+      }
+    }
+
+    function emitPetalBurst(theme) {
+      const localBurstCount = 16;
+      for (let i = 0; i < localBurstCount; i++) {
+        const petal = document.createElement('span');
+        petal.className = 'burst-petal';
+
+        const size = rand(9, 16);
+        const x = rand(-110, 110);
+        const y = rand(-170, -90);
+        const fall = rand(18, 54);
+        const rot = rand(120, 380) * (Math.random() > 0.5 ? 1 : -1);
+        const dur = rand(1.8, 2.6);
+        const delay = rand(0, 0.12);
+
+        petal.style.setProperty('--size', `${size}px`);
+        petal.style.setProperty('--x', `${x}px`);
+        petal.style.setProperty('--y', `${y}px`);
+        petal.style.setProperty('--fall', `${fall}px`);
+        petal.style.setProperty('--rot', `${rot}deg`);
+        petal.style.setProperty('--dur', `${dur}s`);
+        petal.style.setProperty('--delay', `${delay}s`);
+        petal.style.setProperty('--petal-color', theme.icon?.petalColor || theme.accent);
+
+        petalBurstLayerEl.appendChild(petal);
+        setTimeout(() => petal.remove(), (dur + delay + 0.2) * 1000);
+      }
+
+      const screenCount = window.innerWidth <= 760 ? 32 : 48;
+      for (let i = 0; i < screenCount; i++) {
+        const petal = document.createElement('span');
+        petal.className = 'screen-petal';
+
+        const size = rand(12, 24);
+        const top = rand(10, 86);
+        const driftY = rand(-40, 34);
+        const rot = rand(180, 520) * (Math.random() > 0.5 ? 1 : -1);
+        const dur = rand(3.4, 5.4);
+        const delay = rand(0, 0.85);
+
+        petal.style.setProperty('--size', `${size}px`);
+        petal.style.setProperty('--top', `${top}%`);
+        petal.style.setProperty('--driftY', `${driftY}px`);
+        petal.style.setProperty('--rot', `${rot}deg`);
+        petal.style.setProperty('--dur', `${dur}s`);
+        petal.style.setProperty('--delay', `${delay}s`);
+        petal.style.setProperty('--petal-color', theme.icon?.petalColor || theme.accent);
+
+        screenPetalLayerEl.appendChild(petal);
+        setTimeout(() => petal.remove(), (dur + delay + 0.3) * 1000);
+      }
+    }
+
+    function tick() {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const s = now.getSeconds();
+      const ms = now.getMilliseconds();
+      const theme = themes[h];
+      const bottleCycle = Math.floor(now.getTime() / tenMinuteMs);
+
+      if (lastBottleCycle !== -1 && bottleCycle !== lastBottleCycle) {
+        emitPetalBurst(themes[lastThemeIndex] || theme);
+      }
+      lastBottleCycle = bottleCycle;
+
+      if (lastHour !== h) {
+        applyTheme(theme, h);
+        lastHour = h;
+      }
+
+      if (lastSecond !== s) {
+        timeEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        dateEl.textContent = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())}`;
+        weekdayEl.textContent = weekdays[now.getDay()];
+        lastSecond = s;
+      }
+
+      const minutesInBottle = m % 10;
+      const elapsedMs = (minutesInBottle * 60 * 1000) + (s * 1000) + ms;
+      const bottleProgress = clamp(elapsedMs / tenMinuteMs, 0, 1);
+      const progressPercent = bottleProgress >= 0.995 ? 100 : Math.floor(bottleProgress * 100);
+      document.documentElement.style.setProperty('--liquid-height', `${(bottleProgress * 100).toFixed(2)}%`);
+      progressTextEl.textContent = `ボトル充填 ${progressPercent}%`;
+
+      lastThemeIndex = h;
+      requestAnimationFrame(tick);
+    }
+
+    const initialHour = new Date().getHours();
+    applyTheme(themes[initialHour], initialHour);
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
