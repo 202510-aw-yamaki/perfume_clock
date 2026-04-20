@@ -15,6 +15,11 @@
       --text-sub: rgba(43, 33, 28, 0.72);
       --border: rgba(255, 255, 255, 0.28);
       --shadow: 0 24px 60px rgba(118, 77, 46, 0.16);
+      --card-bg-top: rgba(255,255,255,0.84);
+      --card-bg-bottom: rgba(255,255,255,0.48);
+      --card-border: rgba(255,255,255,0.58);
+      --card-text-main: #4d3323;
+      --card-text-sub: rgba(77,51,35,0.82);
       --liquid-height: 0%;
     }
 
@@ -42,6 +47,13 @@
         radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--theme-secondary) 12%, transparent), transparent 34%),
         linear-gradient(145deg, var(--page-bg), var(--page-bg-deep));
       transition: background 900ms ease, color 500ms ease;
+    }
+
+    body.night-quiet {
+      background:
+        linear-gradient(145deg,
+          color-mix(in srgb, var(--page-bg) 78%, #0c1021),
+          color-mix(in srgb, var(--page-bg-deep) 84%, #060915));
     }
 
     .screen {
@@ -103,6 +115,7 @@
       background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
       opacity: 0.9;
       animation: floatGlow 11s ease-in-out infinite;
+      transition: opacity 0.9s ease, background 0.9s ease;
     }
 
     .ambient::before {
@@ -234,8 +247,22 @@
     }
 
     .floral-card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.84), rgba(255,255,255,0.48));
-      border-color: rgba(255,255,255,0.58);
+      background: linear-gradient(180deg, var(--card-bg-top), var(--card-bg-bottom));
+      border-color: var(--card-border);
+    }
+
+    .floral-card .label,
+    .floral-card .flower-name,
+    .floral-card .meaning-line strong,
+    .floral-card .theme-line strong,
+    .floral-card .scent-label {
+      color: var(--card-text-main);
+    }
+
+    .floral-card .meaning-line,
+    .floral-card .theme-line,
+    .floral-card .scent-text {
+      color: var(--card-text-sub);
     }
 
     .label {
@@ -319,16 +346,23 @@
     .mist-layer,
     .inner-mist,
     .petal-burst-layer,
-    .screen-petal-layer {
+    .screen-petal-layer,
+    .hour-flower-layer,
+    .reed-aroma {
       position: absolute;
       inset: 0;
       pointer-events: none;
       overflow: hidden;
+      transition: opacity 0.7s ease;
     }
 
     .screen-petal-layer {
       z-index: 4;
       mix-blend-mode: screen;
+    }
+
+    .hour-flower-layer {
+      z-index: 5;
     }
 
     .mist,
@@ -423,6 +457,142 @@
       overflow: visible;
     }
 
+    .source-pod,
+    .tube,
+    .drop,
+    .reeds,
+    .reed-aroma,
+    .bottle-emblem,
+    .bottle-cap {
+      transition: opacity 420ms ease, transform 420ms ease;
+    }
+
+    .reeds {
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      width: 176px;
+      height: 148px;
+      transform: translateX(-50%);
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .reed {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 5px;
+      height: var(--reed-h, 118px);
+      margin-left: var(--reed-x, 0px);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(239,224,190,0.96), rgba(157,118,72,0.96));
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.14),
+        0 4px 10px rgba(0,0,0,0.12);
+      transform-origin: bottom center;
+      transform: rotate(var(--reed-r, 0deg));
+    }
+
+    .reed::after {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 1px;
+      width: 1px;
+      background: rgba(255,255,255,0.28);
+      border-radius: inherit;
+      opacity: 0.5;
+    }
+
+    .reed-aroma {
+      left: 50%;
+      top: 24px;
+      width: 196px;
+      height: 158px;
+      transform: translateX(-50%);
+      z-index: 1;
+      opacity: 0;
+    }
+
+    .aroma-thread {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      width: var(--thread-w, 64px);
+      height: var(--thread-h, 112px);
+      margin-left: var(--thread-x, 0px);
+      border: 1.8px solid color-mix(in srgb, var(--theme-accent) 56%, rgba(255,255,255,0.82));
+      border-color: color-mix(in srgb, var(--theme-accent) 56%, rgba(255,255,255,0.82)) transparent transparent transparent;
+      border-radius: 60% 60% 0 0 / 100% 100% 0 0;
+      opacity: 0;
+      filter: blur(0.35px);
+      animation: aromaLift var(--dur, 3.8s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screen.diffuser-mode {
+      background:
+        linear-gradient(160deg,
+          color-mix(in srgb, var(--theme-secondary) 28%, rgba(255,255,255,0.05)),
+          color-mix(in srgb, var(--theme-primary) 88%, black 12%) 54%,
+          color-mix(in srgb, var(--theme-secondary) 70%, black 20%));
+    }
+
+    .screen.diffuser-mode::before {
+      opacity: 0;
+    }
+
+    .screen.diffuser-mode .source-pod,
+    .screen.diffuser-mode .tube,
+    .screen.diffuser-mode .drop {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none;
+      animation: none !important;
+    }
+
+    .screen.diffuser-mode .drop {
+      display: none !important;
+    }
+
+
+    .screen.diffuser-mode .ambient,
+    .screen.diffuser-mode .mist-layer,
+    .screen.diffuser-mode .inner-mist,
+    .screen.diffuser-mode .liquid-glow,
+    .screen.diffuser-mode .petal-burst-layer {
+      opacity: 0;
+    }
+
+    .screen.diffuser-mode .bottle-cap {
+      opacity: 0.14;
+      transform: translateX(-50%) translateY(-6px) scale(0.84);
+    }
+
+    .screen.diffuser-mode .reeds,
+    .screen.diffuser-mode .reed-aroma,
+    .screen.diffuser-mode .bottle-emblem {
+      opacity: 0.96;
+    }
+
+    .screen.diffuser-mode .liquid {
+      box-shadow:
+        inset 0 8px 18px rgba(255,255,255,0.18),
+        inset 0 -12px 18px rgba(0,0,0,0.10),
+        0 0 18px color-mix(in srgb, var(--theme-accent) 12%, transparent);
+    }
+
+    .screen.diffuser-mode .liquid::before {
+      animation-duration: 10s;
+      opacity: 0.34;
+    }
+
+    .screen.diffuser-mode .liquid::after {
+      animation-duration: 14s;
+      opacity: 0.16;
+    }
+
     .tube {
       position: absolute;
       top: 92px;
@@ -436,23 +606,7 @@
     }
 
     .flow {
-      position: absolute;
-      inset: -40% 1px auto;
-      height: 46%;
-      border-radius: inherit;
-      background: linear-gradient(180deg, rgba(255,255,255,0), color-mix(in srgb, var(--theme-accent) 80%, white 20%), rgba(255,255,255,0));
-      filter: blur(0.5px);
-      animation: stream 2s linear infinite;
-    }
-
-    .flow:nth-child(2) {
-      animation-delay: 0.6s;
-      opacity: 0.66;
-    }
-
-    .flow:nth-child(3) {
-      animation-delay: 1.2s;
-      opacity: 0.46;
+      display: none;
     }
 
     .drop {
@@ -584,6 +738,24 @@
       filter: blur(5px);
       opacity: 0.92;
       z-index: 1;
+    }
+
+    .bottle-emblem {
+      position: absolute;
+      right: 16px;
+      bottom: 24px;
+      width: 68px;
+      height: 68px;
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      filter: drop-shadow(0 0 12px rgba(255,255,255,0.14));
+    }
+
+    .bottle-emblem svg {
+      width: 100%;
+      height: 100%;
+      opacity: 0.92;
     }
 
     .liquid {
@@ -778,6 +950,61 @@
       }
     }
 
+    .hour-flower {
+      position: absolute;
+      left: -22%;
+      top: var(--top, 50%);
+      width: var(--size, 84px);
+      height: var(--size, 84px);
+      opacity: 0;
+      transform-origin: center center;
+      animation: hourFlowerSweep var(--dur, 4.8s) cubic-bezier(.16,.72,.15,1) forwards;
+      animation-delay: var(--delay, 0s);
+      filter: drop-shadow(0 0 16px rgba(255,255,255,0.28));
+    }
+
+    .hour-flower svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes hourFlowerSweep {
+      0% {
+        opacity: 0;
+        transform: translate3d(-10vw, 10px, 0) rotate(0deg) scale(0.72);
+      }
+      10% {
+        opacity: 0.98;
+      }
+      68% {
+        opacity: 0.92;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate3d(122vw, var(--driftY, -20px), 0)
+          rotate(var(--rot, 280deg))
+          scale(1.08);
+      }
+    }
+
+    @keyframes aromaLift {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0) scale(0.94) rotate(0deg);
+      }
+      20% {
+        opacity: 0.54;
+      }
+      70% {
+        opacity: 0.32;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(var(--driftX, 8px), -44px, 0) scale(1.06) rotate(var(--rot, 8deg));
+      }
+    }
+
     @media (max-width: 760px) {
       body {
         padding: 12px 12px calc(28px + env(safe-area-inset-bottom));
@@ -926,6 +1153,25 @@
         border-radius: 34px 34px 38px 38px;
       }
 
+      .reeds {
+        top: 48px;
+        width: min(58vw, 210px);
+        height: 190px;
+      }
+
+      .reed-aroma {
+        top: 34px;
+        width: min(64vw, 236px);
+        height: 210px;
+      }
+
+      .bottle-emblem {
+        right: 18px;
+        bottom: 32px;
+        width: min(22vw, 88px);
+        height: min(22vw, 88px);
+      }
+
       .mist-layer {
         opacity: 0.46;
       }
@@ -981,6 +1227,7 @@
   <main class="screen">
     <div class="ambient"></div>
     <div class="screen-petal-layer" id="screenPetalLayer"></div>
+    <div class="hour-flower-layer" id="hourFlowerLayer"></div>
 
     <div class="content">
       <section class="panel info-panel">
@@ -1018,6 +1265,9 @@
           <div class="petal-burst-layer" id="petalBurstLayer"></div>
 
           <div class="distillery">
+            <div class="reed-aroma" id="reedAroma"></div>
+            <div class="reeds" id="reeds"></div>
+
             <div class="source-pod">
               <div class="source-orb">
                 <div class="source-icon" id="sourceIcon" aria-hidden="true"></div>
@@ -1041,6 +1291,7 @@
                 <div class="bottle-neck"></div>
                 <div class="bottle-body">
                   <div class="inner-mist" id="innerMist"></div>
+                  <div class="bottle-emblem" id="bottleEmblem" aria-hidden="true"></div>
                   <div class="liquid" id="liquid">
                     <div class="liquid-glow"></div>
                   </div>
@@ -1374,6 +1625,7 @@
       }
     ];
 
+    const screenEl = document.querySelector('.screen');
     const timeEl = document.getElementById('time');
     const dateEl = document.getElementById('date');
     const weekdayEl = document.getElementById('weekday');
@@ -1387,17 +1639,26 @@
     const bottleSubEl = document.getElementById('bottleSub');
     const innerMistEl = document.getElementById('innerMist');
     const mistLayerEl = document.getElementById('mistLayer');
+    const sourcePodEl = document.querySelector('.source-pod');
+    const tubeEl = document.querySelector('.tube');
+    const dropEls = Array.from(document.querySelectorAll('.drop'));
     const petalBurstLayerEl = document.getElementById('petalBurstLayer');
     const screenPetalLayerEl = document.getElementById('screenPetalLayer');
+    const hourFlowerLayerEl = document.getElementById('hourFlowerLayer');
+    const reedsEl = document.getElementById('reeds');
+    const reedAromaEl = document.getElementById('reedAroma');
+    const bottleEmblemEl = document.getElementById('bottleEmblem');
 
     const weekdays = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
     const tenMinuteMs = 10 * 60 * 1000;
+    const hourMs = 60 * 60 * 1000;
     const warmBase = '#ffe0c7';
     const warmDeep = '#f4c4a0';
 
     let lastHour = -1;
     let lastSecond = -1;
     let lastBottleCycle = -1;
+    let lastDiffuserMode = isDiffuserHour(new Date().getHours());
     let lastThemeIndex = new Date().getHours();
 
     function pad(num) {
@@ -1459,6 +1720,97 @@
       return 0.9;
     }
 
+    function isDiffuserHour(hour) {
+      return hour >= 21 || hour <= 8;
+    }
+
+    function createFlowerSvg(theme, options = {}) {
+      const icon = theme.icon;
+      const count = icon.petals || 6;
+      const rotationOffset = icon.rotation || 0;
+      const radius = icon.radius || 10;
+      const petalLength = icon.petalLength || 13;
+      const petalWidth = icon.petalWidth || 6;
+      const petalColor = options.petalColor || icon.petalColor;
+      const centerColor = options.centerColor || icon.centerColor || '#fff2c8';
+      const innerColor = options.innerColor || icon.innerColor || '#ffffff';
+      const gradId = `flowerCore-${Math.random().toString(36).slice(2, 9)}`;
+      const petals = [];
+
+      for (let i = 0; i < count; i++) {
+        const angle = (360 / count) * i + rotationOffset;
+        const extraScale = 0.92 + (i % 2) * 0.08;
+        petals.push(`
+          <ellipse
+            cx="23"
+            cy="${23 - radius}"
+            rx="${petalWidth * extraScale}"
+            ry="${petalLength * extraScale}"
+            fill="${petalColor}"
+            transform="rotate(${angle} 23 23)"
+            opacity="${options.petalOpacity ?? (0.94 - (i % 3) * 0.08)}"
+          />
+        `);
+      }
+
+      return `
+        <svg viewBox="0 0 46 46" role="img" aria-label="${theme.flower}">
+          <defs>
+            <radialGradient id="${gradId}" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="${innerColor}" />
+              <stop offset="100%" stop-color="${centerColor}" />
+            </radialGradient>
+          </defs>
+          ${petals.join('')}
+          <circle cx="23" cy="23" r="7.2" fill="url(#${gradId})" />
+          <circle cx="23" cy="23" r="3.1" fill="${centerColor}" opacity="0.9" />
+        </svg>
+      `;
+    }
+
+    function renderReeds(theme) {
+      const reedConfig = [
+        { x: -40, r: -18, h: 120 },
+        { x: -22, r: -8, h: 132 },
+        { x: 0, r: 2, h: 138 },
+        { x: 20, r: 11, h: 130 },
+        { x: 38, r: 20, h: 118 }
+      ];
+
+      reedsEl.innerHTML = reedConfig.map((reed) => `
+        <span
+          class="reed"
+          style="--reed-x:${reed.x}px; --reed-r:${reed.r}deg; --reed-h:${reed.h}px;"
+        ></span>
+      `).join('');
+
+      reedAromaEl.innerHTML = Array.from({ length: 6 }, (_, i) => {
+        const width = rand(46, 76);
+        const height = rand(86, 130);
+        const x = [-34, -20, -8, 8, 22, 36][i];
+        const driftX = rand(4, 16) * (i % 2 === 0 ? 1 : -1);
+        const rot = rand(-8, 12);
+        const delay = rand(-3.4, 0);
+        const dur = rand(3.2, 4.8);
+
+        return `
+          <span
+            class="aroma-thread"
+            style="--thread-w:${width}px; --thread-h:${height}px; --thread-x:${x}px; --driftX:${driftX}px; --rot:${rot}deg; --delay:${delay}s; --dur:${dur}s;"
+          ></span>
+        `;
+      }).join('');
+
+      const emblemPetal = mixHex(theme.icon?.petalColor || theme.accent, '#ffffff', 0.38);
+      const emblemCenter = mixHex(theme.icon?.centerColor || theme.accent, '#fff4d6', 0.42);
+      bottleEmblemEl.innerHTML = createFlowerSvg(theme, {
+        petalColor: emblemPetal,
+        centerColor: emblemCenter,
+        innerColor: '#fffdf7',
+        petalOpacity: 0.82
+      });
+    }
+
     function applyTheme(theme, hour) {
       const root = document.documentElement;
       root.style.setProperty('--theme-primary', theme.primary);
@@ -1484,70 +1836,74 @@
       root.style.setProperty('--border', border);
       root.style.setProperty('--shadow', shadow);
 
+      const cardReference = mixHex(theme.primary, theme.secondary, 0.38);
+      const darkCard = getLuminance(cardReference) < 0.36;
+
+      root.style.setProperty('--card-bg-top', darkCard ? 'rgba(25, 20, 34, 0.74)' : 'rgba(255,255,255,0.84)');
+      root.style.setProperty('--card-bg-bottom', darkCard ? 'rgba(13, 11, 20, 0.42)' : 'rgba(255,255,255,0.48)');
+      root.style.setProperty('--card-border', darkCard ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.58)');
+      root.style.setProperty('--card-text-main', darkCard ? '#fff8f1' : '#4d3323');
+      root.style.setProperty('--card-text-sub', darkCard ? 'rgba(255, 245, 235, 0.84)' : 'rgba(77,51,35,0.82)');
+
       flowerNameEl.textContent = theme.flower;
       flowerMeaningEl.textContent = theme.meaning;
       colorNameEl.textContent = `${theme.themeName} (${theme.themeNameEn})`;
       flowerScentEl.textContent = theme.scent;
       bottleTitleEl.textContent = theme.title;
-      bottleSubEl.textContent = `10分かけて「${theme.flower}」の香りが満ち、満了の瞬間に花びらが画面をやわらかく横切ります。`;
+      const diffuserMode = isDiffuserHour(hour);
+      bottleSubEl.textContent = diffuserMode
+        ? `1時間かけて「${theme.flower}」の香りが空間へほどけ、ディフューザーボトルの残量は100%から0%へ静かに移ろいます。`
+        : `10分かけて「${theme.flower}」の香りが満ち、満了の瞬間に花びらが画面を右から左へやわらかく横切ります。`;
 
       renderSourceIcon(theme);
-      rebuildMist(mistLayerEl, 18, false, theme);
-      rebuildMist(innerMistEl, 12, true, theme);
+
+      if (diffuserMode) {
+        document.body.classList.add('night-quiet');
+        screenEl.classList.add('diffuser-mode');
+        if (sourcePodEl) sourcePodEl.hidden = true;
+        if (tubeEl) tubeEl.hidden = true;
+        dropEls.forEach((el) => { el.hidden = true; el.style.display = 'none'; });
+        renderReeds(theme);
+      } else {
+        document.body.classList.remove('night-quiet');
+        screenEl.classList.remove('diffuser-mode');
+        if (sourcePodEl) sourcePodEl.hidden = false;
+        if (tubeEl) tubeEl.hidden = false;
+        dropEls.forEach((el) => { el.hidden = false; el.style.display = ''; });
+        reedsEl.innerHTML = '';
+        reedAromaEl.innerHTML = '';
+        bottleEmblemEl.innerHTML = '';
+      }
+
+      if (diffuserMode) {
+        mistLayerEl.innerHTML = '';
+        innerMistEl.innerHTML = '';
+      } else {
+        rebuildMist(mistLayerEl, 18, false, theme, false);
+        rebuildMist(innerMistEl, 12, true, theme, false);
+      }
     }
 
     function renderSourceIcon(theme) {
-      const icon = theme.icon;
-      const petals = [];
-      const count = icon.petals || 6;
-      const rotationOffset = icon.rotation || 0;
-      const radius = icon.radius || 10;
-      const petalLength = icon.petalLength || 13;
-      const petalWidth = icon.petalWidth || 6;
-
-      for (let i = 0; i < count; i++) {
-        const angle = (360 / count) * i + rotationOffset;
-        const extraScale = 0.92 + (i % 2) * 0.08;
-        petals.push(`
-          <ellipse
-            cx="23"
-            cy="${23 - radius}"
-            rx="${petalWidth * extraScale}"
-            ry="${petalLength * extraScale}"
-            fill="${icon.petalColor}"
-            transform="rotate(${angle} 23 23)"
-            opacity="${0.94 - (i % 3) * 0.08}"
-          />
-        `);
-      }
-
-      sourceIconEl.innerHTML = `
-        <svg viewBox="0 0 46 46" role="img" aria-label="${theme.flower}">
-          <defs>
-            <radialGradient id="flowerCore" cx="50%" cy="50%" r="60%">
-              <stop offset="0%" stop-color="${icon.innerColor || '#ffffff'}" />
-              <stop offset="100%" stop-color="${icon.centerColor || '#fff2c8'}" />
-            </radialGradient>
-          </defs>
-          ${petals.join('')}
-          <circle cx="23" cy="23" r="7.2" fill="url(#flowerCore)" />
-          <circle cx="23" cy="23" r="3.1" fill="${icon.centerColor || '#fff2c8'}" opacity="0.9" />
-        </svg>
-      `;
+      sourceIconEl.innerHTML = createFlowerSvg(theme);
     }
 
-    function rebuildMist(container, count, inner, theme) {
+    function rebuildMist(container, count, inner, theme, diffuserMode = false) {
       container.innerHTML = '';
       for (let i = 0; i < count; i++) {
         const node = document.createElement('span');
-        const selector = inner ? (i % 4 === 0 ? 'petal' : 'bubble') : (i % 5 === 0 ? 'petal' : 'mist');
+        const selector = diffuserMode
+          ? (inner ? 'bubble' : (i % 4 === 0 ? 'bubble' : 'mist'))
+          : (inner ? (i % 4 === 0 ? 'petal' : 'bubble') : (i % 5 === 0 ? 'petal' : 'mist'));
         node.className = selector;
         const size = inner
-          ? (selector === 'petal' ? rand(8, 14) : rand(4, 10))
-          : (selector === 'petal' ? rand(10, 16) : rand(10, 24));
+          ? (selector === 'petal' ? rand(8, 14) : rand(4, diffuserMode ? 9 : 10))
+          : (selector === 'petal' ? rand(10, 16) : rand(diffuserMode ? 12 : 10, diffuserMode ? 28 : 24));
         const left = inner ? rand(8, 88) : rand(0, 100);
-        const bottom = inner ? rand(-4, 10) : rand(-10, 80);
-        const duration = inner ? rand(3.6, 7.4) : rand(6.6, 13.2);
+        const bottom = inner ? rand(-4, 10) : rand(diffuserMode ? 10 : -10, diffuserMode ? 88 : 80);
+        const duration = diffuserMode
+          ? (inner ? rand(5.2, 9.8) : rand(9.4, 16.8))
+          : (inner ? rand(3.6, 7.4) : rand(6.6, 13.2));
         const delay = rand(-duration, 0);
 
         node.style.width = `${size}px`;
@@ -1556,13 +1912,18 @@
         node.style.bottom = `${bottom}px`;
         node.style.animationDuration = `${duration}s`;
         node.style.animationDelay = `${delay}s`;
-        node.style.opacity = selector === 'petal' ? rand(0.14, 0.34) : rand(0.2, 0.58);
+        node.style.opacity = diffuserMode
+          ? (selector === 'bubble' ? rand(0.14, 0.28) : rand(0.12, 0.28))
+          : (selector === 'petal' ? rand(0.14, 0.34) : rand(0.2, 0.58));
 
         if (selector === 'petal') {
           node.style.background = `
             radial-gradient(circle at 35% 28%, rgba(255,255,255,0.92), transparent 26%),
             ${theme.icon?.petalColor || theme.accent}
           `;
+        } else if (diffuserMode && selector === 'mist') {
+          node.style.background = `radial-gradient(circle, color-mix(in srgb, ${theme.accent} 28%, rgba(255,255,255,0.22)), transparent 72%)`;
+          node.style.filter = 'blur(1.2px)';
         }
 
         container.appendChild(node);
@@ -1570,7 +1931,7 @@
     }
 
     function emitPetalBurst(theme) {
-      const localBurstCount = 16;
+      const localBurstCount = 18;
       for (let i = 0; i < localBurstCount; i++) {
         const petal = document.createElement('span');
         petal.className = 'burst-petal';
@@ -1596,7 +1957,7 @@
         setTimeout(() => petal.remove(), (dur + delay + 0.2) * 1000);
       }
 
-      const screenCount = window.innerWidth <= 760 ? 32 : 48;
+      const screenCount = window.innerWidth <= 760 ? 40 : 64;
       for (let i = 0; i < screenCount; i++) {
         const petal = document.createElement('span');
         petal.className = 'screen-petal';
@@ -1621,6 +1982,38 @@
       }
     }
 
+    function emitHourFlowerSweep(theme) {
+      const count = window.innerWidth <= 760 ? 8 : 12;
+
+      for (let i = 0; i < count; i++) {
+        const flower = document.createElement('span');
+        flower.className = 'hour-flower';
+
+        const size = rand(window.innerWidth <= 760 ? 52 : 62, window.innerWidth <= 760 ? 96 : 132);
+        const top = rand(6, 78);
+        const driftY = rand(-24, 28);
+        const rot = rand(140, 420) * (Math.random() > 0.5 ? 1 : -1);
+        const dur = rand(3.8, 5.6);
+        const delay = rand(0, 1.2);
+
+        flower.style.setProperty('--size', `${size}px`);
+        flower.style.setProperty('--top', `${top}%`);
+        flower.style.setProperty('--driftY', `${driftY}px`);
+        flower.style.setProperty('--rot', `${rot}deg`);
+        flower.style.setProperty('--dur', `${dur}s`);
+        flower.style.setProperty('--delay', `${delay}s`);
+        flower.innerHTML = createFlowerSvg(theme, {
+          petalColor: mixHex(theme.icon?.petalColor || theme.accent, '#ffffff', 0.12),
+          centerColor: mixHex(theme.icon?.centerColor || theme.accent, '#fff4d6', 0.24),
+          innerColor: '#fffdf8',
+          petalOpacity: 0.95
+        });
+
+        hourFlowerLayerEl.appendChild(flower);
+        setTimeout(() => flower.remove(), (dur + delay + 0.3) * 1000);
+      }
+    }
+
     function tick() {
       const now = new Date();
       const h = now.getHours();
@@ -1628,15 +2021,22 @@
       const s = now.getSeconds();
       const ms = now.getMilliseconds();
       const theme = themes[h];
-      const bottleCycle = Math.floor(now.getTime() / tenMinuteMs);
+      const diffuserMode = isDiffuserHour(h);
+      const bottleCycle = diffuserMode
+        ? Math.floor(now.getTime() / hourMs)
+        : Math.floor(now.getTime() / tenMinuteMs);
 
-      if (lastBottleCycle !== -1 && bottleCycle !== lastBottleCycle) {
-        emitPetalBurst(themes[lastThemeIndex] || theme);
+      if (!diffuserMode && lastBottleCycle !== -1 && bottleCycle !== lastBottleCycle && lastDiffuserMode === diffuserMode) {
+        emitPetalBurst(theme);
       }
       lastBottleCycle = bottleCycle;
+      lastDiffuserMode = diffuserMode;
 
       if (lastHour !== h) {
         applyTheme(theme, h);
+        if (lastHour !== -1) {
+          emitHourFlowerSweep(theme);
+        }
         lastHour = h;
       }
 
@@ -1647,12 +2047,20 @@
         lastSecond = s;
       }
 
-      const minutesInBottle = m % 10;
-      const elapsedMs = (minutesInBottle * 60 * 1000) + (s * 1000) + ms;
-      const bottleProgress = clamp(elapsedMs / tenMinuteMs, 0, 1);
-      const progressPercent = bottleProgress >= 0.995 ? 100 : Math.floor(bottleProgress * 100);
-      document.documentElement.style.setProperty('--liquid-height', `${(bottleProgress * 100).toFixed(2)}%`);
-      progressTextEl.textContent = `ボトル充填 ${progressPercent}%`;
+      if (diffuserMode) {
+        const elapsedHourMs = (m * 60 * 1000) + (s * 1000) + ms;
+        const remainingRatio = clamp(1 - (elapsedHourMs / hourMs), 0, 1);
+        const progressPercent = remainingRatio <= 0.005 ? 0 : Math.ceil(remainingRatio * 100);
+        document.documentElement.style.setProperty('--liquid-height', `${(remainingRatio * 100).toFixed(2)}%`);
+        progressTextEl.textContent = `ボトル残量 ${progressPercent}%`;
+      } else {
+        const minutesInBottle = m % 10;
+        const elapsedMs = (minutesInBottle * 60 * 1000) + (s * 1000) + ms;
+        const bottleProgress = clamp(elapsedMs / tenMinuteMs, 0, 1);
+        const progressPercent = bottleProgress >= 0.995 ? 100 : Math.floor(bottleProgress * 100);
+        document.documentElement.style.setProperty('--liquid-height', `${(bottleProgress * 100).toFixed(2)}%`);
+        progressTextEl.textContent = `ボトル充填 ${progressPercent}%`;
+      }
 
       lastThemeIndex = h;
       requestAnimationFrame(tick);
